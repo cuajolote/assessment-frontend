@@ -9,7 +9,9 @@
       "Bash(npx tsx:*)",
       "Bash(node -e:*)",
       "Bash(npx ng test --watch=false)",
-      "Bash(npx ng build:*)"
+      "Bash(npx ng build:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npx ng test:*)"
     ]
   }
 }
