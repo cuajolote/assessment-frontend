@@ -1,0 +1,39 @@
+<div class="max-w-screen-2xl mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-semibold text-gray-900">Tickets</h1>
+    @if (tickets$ | async; as allTickets) {
+      @if (filteredTickets$ | async; as filtered) {
+        <p class="mt-1 text-sm text-gray-500">
+          Showing {{ filtered.length | number }} of {{ allTickets.length | number }} tickets
+        </p>
+      }
+    }
+  </div>
+
+  <!-- TODO: Filters will go here in Phase 4 -->
+
+  <!-- Table -->
+  @if (loading$ | async) {
+    <div class="flex items-center justify-center h-64">
+      <div class="text-gray-400">Loading tickets...</div>
+    </div>
+  } @else {
+    @if (filteredTickets$ | async; as tickets) {
+      @if (tickets.length === 0) {
+        <div class="flex flex-col items-center justify-center h-64 text-gray-400">
+          <p class="text-lg">No tickets found</p>
+          <p class="text-sm mt-1">Try adjusting your filters</p>
+        </div>
+      } @else {
+        <app-ticket-table
+          [tickets]="tickets"
+          [visibleColumns]="(visibleColumns$ | async) ?? []"
+          [sort]="(sort$ | async) ?? []"
+          (ticketSelect)="onTicketSelect($event)"
+          (sortChange)="onSortChange($event)"
+        />
+      }
+    }
+  }
+</div>

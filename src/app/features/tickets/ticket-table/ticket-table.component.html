@@ -1,0 +1,108 @@
+<div class="border border-gray-200 rounded-lg overflow-hidden bg-white">
+  <!-- Header -->
+  <div class="flex bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wider">
+    @if (isColumnVisible('id')) {
+      <div class="w-32 px-4 py-3 cursor-pointer hover:bg-gray-100 select-none" (click)="onSort('id')">
+        ID
+        <span class="ml-1 text-gray-400">{{ getSortDirection('id') === 'asc' ? '▲' : getSortDirection('id') === 'desc' ? '▼' : '' }}</span>
+        @if (getSortIndex('id') > 0 && sort().length > 1) {
+          <span class="ml-0.5 text-[10px] text-blue-500">{{ getSortIndex('id') }}</span>
+        }
+      </div>
+    }
+    @if (isColumnVisible('title')) {
+      <div class="flex-1 min-w-48 px-4 py-3 cursor-pointer hover:bg-gray-100 select-none" (click)="onSort('title')">
+        Title
+        <span class="ml-1 text-gray-400">{{ getSortDirection('title') === 'asc' ? '▲' : getSortDirection('title') === 'desc' ? '▼' : '' }}</span>
+        @if (getSortIndex('title') > 0 && sort().length > 1) {
+          <span class="ml-0.5 text-[10px] text-blue-500">{{ getSortIndex('title') }}</span>
+        }
+      </div>
+    }
+    @if (isColumnVisible('status')) {
+      <div class="w-28 px-4 py-3 cursor-pointer hover:bg-gray-100 select-none" (click)="onSort('status')">
+        Status
+        <span class="ml-1 text-gray-400">{{ getSortDirection('status') === 'asc' ? '▲' : getSortDirection('status') === 'desc' ? '▼' : '' }}</span>
+      </div>
+    }
+    @if (isColumnVisible('priority')) {
+      <div class="w-24 px-4 py-3 cursor-pointer hover:bg-gray-100 select-none" (click)="onSort('priority')">
+        Priority
+        <span class="ml-1 text-gray-400">{{ getSortDirection('priority') === 'asc' ? '▲' : getSortDirection('priority') === 'desc' ? '▼' : '' }}</span>
+      </div>
+    }
+    @if (isColumnVisible('assignee')) {
+      <div class="w-36 px-4 py-3 cursor-pointer hover:bg-gray-100 select-none" (click)="onSort('assignee')">
+        Assignee
+        <span class="ml-1 text-gray-400">{{ getSortDirection('assignee') === 'asc' ? '▲' : getSortDirection('assignee') === 'desc' ? '▼' : '' }}</span>
+      </div>
+    }
+    @if (isColumnVisible('createdAt')) {
+      <div class="w-32 px-4 py-3 cursor-pointer hover:bg-gray-100 select-none" (click)="onSort('createdAt')">
+        Created
+        <span class="ml-1 text-gray-400">{{ getSortDirection('createdAt') === 'asc' ? '▲' : getSortDirection('createdAt') === 'desc' ? '▼' : '' }}</span>
+      </div>
+    }
+    @if (isColumnVisible('tags')) {
+      <div class="w-44 px-4 py-3">
+        Tags
+      </div>
+    }
+  </div>
+
+  <!-- Virtualized rows -->
+  <cdk-virtual-scroll-viewport itemSize="48" class="ticket-viewport">
+    <div
+      *cdkVirtualFor="let ticket of tickets(); trackBy: trackById"
+      class="flex items-center border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors"
+      [class.bg-amber-50]="ticket._pendingSync"
+      (click)="onSelectTicket(ticket)"
+    >
+      @if (isColumnVisible('id')) {
+        <div class="w-32 px-4 py-3 text-xs text-gray-500 font-mono truncate">
+          {{ ticket.id }}
+          @if (ticket._pendingSync) {
+            <span class="ml-1 text-amber-500" title="Pending sync">●</span>
+          }
+        </div>
+      }
+      @if (isColumnVisible('title')) {
+        <div class="flex-1 min-w-48 px-4 py-3 text-sm text-gray-900 truncate">
+          {{ ticket.title }}
+        </div>
+      }
+      @if (isColumnVisible('status')) {
+        <div class="w-28 px-4 py-3">
+          <app-badge [label]="STATUS_LABELS[ticket.status]" [colorClass]="STATUS_COLORS[ticket.status]" />
+        </div>
+      }
+      @if (isColumnVisible('priority')) {
+        <div class="w-24 px-4 py-3">
+          <app-badge [label]="PRIORITY_LABELS[ticket.priority]" [colorClass]="PRIORITY_COLORS[ticket.priority]" />
+        </div>
+      }
+      @if (isColumnVisible('assignee')) {
+        <div class="w-36 px-4 py-3 text-sm text-gray-600 truncate">
+          {{ ticket.assignee || '—' }}
+        </div>
+      }
+      @if (isColumnVisible('createdAt')) {
+        <div class="w-32 px-4 py-3 text-xs text-gray-500">
+          {{ ticket.createdAt | relativeTime }}
+        </div>
+      }
+      @if (isColumnVisible('tags')) {
+        <div class="w-44 px-4 py-3 flex flex-wrap gap-1">
+          @for (tag of ticket.tags.slice(0, 3); track tag) {
+            <span class="inline-block px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px]">
+              {{ tag }}
+            </span>
+          }
+          @if (ticket.tags.length > 3) {
+            <span class="text-[10px] text-gray-400">+{{ ticket.tags.length - 3 }}</span>
+          }
+        </div>
+      }
+    </div>
+  </cdk-virtual-scroll-viewport>
+</div>
