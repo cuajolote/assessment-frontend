@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__trigger__search_docs",
+      "Bash(npx @angular/cli version)",
+      "Bash(npx @angular/cli new:*)",
+      "Bash(npm install:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(npx tsx:*)",
+      "Bash(node -e:*)",
+      "Bash(npx ng test --watch=false)",
+      "Bash(npx ng build:*)"
+    ]
+  }
+}
