@@ -11,7 +11,8 @@
     }
   </div>
 
-  <!-- TODO: Filters will go here in Phase 4 -->
+  <!-- Filters -->
+  <app-ticket-filters />
 
   <!-- Table -->
   @if (loading$ | async) {
@@ -37,3 +38,12 @@
     }
   }
 </div>
+
+<!-- Edit panel -->
+@if (selectedTicket$ | async; as selectedTicket) {
+  <app-ticket-edit
+    [ticket]="selectedTicket"
+    (ticketSave)="onTicketSave($event)"
+    (panelClose)="onEditClose()"
+  />
+}
