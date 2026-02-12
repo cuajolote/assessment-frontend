@@ -4,12 +4,20 @@ import { TicketStoreService } from '../../../core/services/ticket-store.service'
 import { TicketTableComponent } from '../ticket-table/ticket-table.component';
 import { TicketFiltersComponent } from '../ticket-filters/ticket-filters.component';
 import { TicketEditComponent } from '../ticket-edit/ticket-edit.component';
+import { SyncStatusComponent } from '../sync-status/sync-status.component';
 import { Ticket } from '../../../core/models/ticket.model';
 
 @Component({
   selector: 'app-ticket-list',
   standalone: true,
-  imports: [AsyncPipe, DecimalPipe, TicketTableComponent, TicketFiltersComponent, TicketEditComponent],
+  imports: [
+    AsyncPipe,
+    DecimalPipe,
+    TicketTableComponent,
+    TicketFiltersComponent,
+    TicketEditComponent,
+    SyncStatusComponent,
+  ],
   templateUrl: './ticket-list.component.html',
   styleUrl: './ticket-list.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

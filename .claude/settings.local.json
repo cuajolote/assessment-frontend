@@ -11,7 +11,10 @@
       "Bash(npx ng test --watch=false)",
       "Bash(npx ng build:*)",
       "Bash(npm uninstall:*)",
-      "Bash(npx ng test:*)"
+      "Bash(npx ng test:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm test:*)"
     ]
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, combineLatest, EMPTY } from 'rxjs';
-import { map, distinctUntilChanged, shareReplay, catchError, take } from 'rxjs/operators';
+import { map, distinctUntilChanged, shareReplay, catchError, take, switchMap } from 'rxjs/operators';
 import { Ticket } from '../models/ticket.model';
 import {
   TicketFilters,
@@ -9,6 +9,8 @@ import {
   DEFAULT_COLUMNS,
 } from '../models/filter.model';
 import { TicketService } from './ticket.service';
+import { OfflineService } from './offline.service';
+import { ConnectivityService } from './connectivity.service';
 import { sanitizeTickets } from '../utils/data-sanitizer';
 
 interface TicketState {
@@ -34,7 +36,32 @@ const INITIAL_STATE: TicketState = {
 @Injectable({ providedIn: 'root' })
 export class TicketStoreService {
   private readonly ticketService = inject(TicketService);
+  private readonly offlineService = inject(OfflineService);
+  private readonly connectivityService = inject(ConnectivityService);
   private readonly state = new BehaviorSubject<TicketState>(INITIAL_STATE);
+
+  constructor() {
+    // Initialize IndexedDB
+    this.offlineService.initDatabase();
+
+    // Auto-sync when reconnecting
+    this.connectivityService.isOnline$
+      .pipe(
+        distinctUntilChanged(),
+        switchMap(isOnline => {
+          if (isOnline) {
+            // When going from offline to online, trigger sync
+            return this.offlineService.getPendingChanges().then(pending => {
+              if (pending.length > 0) {
+                this.syncPendingChanges();
+              }
+            });
+          }
+          return EMPTY;
+        })
+      )
+      .subscribe();
+  }
 
   // --- Selectors ---
 
@@ -76,6 +103,8 @@ export class TicketStoreService {
     shareReplay({ bufferSize: 1, refCount: true })
   );
 
+  readonly pendingCount$ = this.offlineService.pendingCount$;
+
   // --- Actions ---
 
   loadTickets(): void {
@@ -85,14 +114,25 @@ export class TicketStoreService {
       .getTickets()
       .pipe(
         take(1),
-        catchError(err => {
-          this.patchState({ loading: false, error: 'Failed to load tickets' });
-          return EMPTY;
+        catchError(() => {
+          // Online fetch failed — try loading from IndexedDB cache
+          return new Observable<Ticket[]>(subscriber => {
+            this.offlineService.getCachedTickets().then(cached => {
+              if (cached.length > 0) {
+                subscriber.next(cached);
+              } else {
+                this.patchState({ loading: false, error: 'Failed to load tickets (offline, no cache)' });
+              }
+              subscriber.complete();
+            });
+          });
         })
       )
       .subscribe(raw => {
         const tickets = sanitizeTickets(raw);
         this.patchState({ tickets, loading: false });
+        // Cache in IndexedDB for offline use
+        this.offlineService.cacheTickets(tickets);
       });
   }
 
@@ -119,18 +159,15 @@ export class TicketStoreService {
 
     if (existing) {
       if (existing.direction === 'asc') {
-        // asc -> desc
         this.patchState({
           sort: current.map(s =>
             s.column === column ? { ...s, direction: 'desc' as const } : s
           ),
         });
       } else {
-        // desc -> remove
         this.patchState({ sort: current.filter(s => s.column !== column) });
       }
     } else {
-      // add as asc
       this.patchState({ sort: [...current, { column, direction: 'asc' }] });
     }
   }
@@ -149,8 +186,11 @@ export class TicketStoreService {
 
   updateTicket(id: string, patch: Partial<Ticket>): void {
     const prev = this.state.value;
+    const ticket = prev.tickets.find(t => t.id === id);
+    const updatedAt = new Date().toISOString();
+
     const updatedTickets = prev.tickets.map(t =>
-      t.id === id ? { ...t, ...patch, updatedAt: new Date().toISOString() } : t
+      t.id === id ? { ...t, ...patch, updatedAt } : t
     );
     // Optimistic update
     this.patchState({ tickets: updatedTickets });
@@ -160,12 +200,63 @@ export class TicketStoreService {
       .pipe(
         take(1),
         catchError(() => {
-          // Rollback on failure
-          this.patchState({ tickets: prev.tickets });
+          // Mark as pending sync instead of rolling back
+          const withPending = prev.tickets.map(t =>
+            t.id === id ? { ...t, ...patch, updatedAt, _pendingSync: true } : t
+          );
+          this.patchState({ tickets: withPending });
+
+          // Queue the change for later sync
+          this.offlineService.queueChange({
+            ticketId: id,
+            patch,
+            originalUpdatedAt: ticket?.updatedAt ?? updatedAt,
+            timestamp: Date.now(),
+          });
+
           return EMPTY;
         })
       )
-      .subscribe();
+      .subscribe(updated => {
+        // Update cache with server response
+        const current = this.state.value.tickets.find(t => t.id === id);
+        if (current) {
+          this.offlineService.updateCachedTicket(current);
+        }
+      });
+  }
+
+  async syncPendingChanges(): Promise<void> {
+    const pending = await this.offlineService.getPendingChanges();
+    if (pending.length === 0) return;
+
+    // Simple strategy: last-write-wins, no conflict resolution UI
+    for (const item of pending) {
+      try {
+        await new Promise<void>((resolve) => {
+          this.ticketService
+            .updateTicket(item.ticketId, item.patch)
+            .pipe(take(1))
+            .subscribe({
+              next: () => {
+                this.offlineService.removePendingChange(item.id!);
+                const tickets = this.state.value.tickets.map(t =>
+                  t.id === item.ticketId ? { ...t, _pendingSync: false } : t
+                );
+                this.patchState({ tickets });
+                resolve();
+              },
+              error: () => {
+                // On error, just remove from queue (last-write-wins)
+                this.offlineService.removePendingChange(item.id!);
+                resolve();
+              },
+            });
+        });
+      } catch {
+        // Continue with next item
+      }
+    }
   }
 
   // --- Private helpers ---
@@ -189,30 +280,25 @@ export class TicketStoreService {
   ): Ticket[] {
     let result = tickets;
 
-    // Text search
     if (filters.searchText) {
       const term = filters.searchText.toLowerCase();
       result = result.filter(t => t.title.toLowerCase().includes(term));
     }
 
-    // Status filter
     if (filters.statuses.length > 0) {
       result = result.filter(t => filters.statuses.includes(t.status));
     }
 
-    // Priority filter
     if (filters.priorities.length > 0) {
       result = result.filter(t => filters.priorities.includes(t.priority));
     }
 
-    // Tags filter
     if (filters.tags.length > 0) {
       result = result.filter(t =>
         filters.tags.some(tag => t.tags.includes(tag))
       );
     }
 
-    // Date range filter
     if (filters.dateRange.from) {
       const from = new Date(filters.dateRange.from).getTime();
       result = result.filter(t => new Date(t.createdAt).getTime() >= from);
@@ -222,7 +308,6 @@ export class TicketStoreService {
       result = result.filter(t => new Date(t.createdAt).getTime() <= to);
     }
 
-    // Multi-column sort
     if (sort.length > 0) {
       result = [...result].sort((a, b) => {
         for (const s of sort) {
