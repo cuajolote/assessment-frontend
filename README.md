@@ -13,6 +13,9 @@ npx ts-node scripts/generate-tickets.ts
 
 # Start development server
 npm start
+
+# Vercel deployed URL
+
 ```
 
 La aplicación estará disponible en **http://localhost:4200**
@@ -230,12 +233,12 @@ Siguiendo las recomendaciones del assessment, incluí solo tests críticos:
 
 ## 🤖 Uso de IA en el Desarrollo
 
-Fui honesto sobre qué partes usé con asistencia de IA (Claude) y cuáles fueron decisiones manuales:
+IA utilizada: Claude Code.
 
 ### ✅ Generado con IA:
 
 1. **Script generador de datos** (`scripts/generate-tickets.ts`)
-   - 100% generado con IA
+   - generado con IA para ahorro de tiempo y productividad
    - Incluye lógica para datos inválidos (fechas, IDs duplicados, etc.)
 
 2. **Setup inicial del proyecto**
@@ -295,8 +298,8 @@ Mi flujo fue:
 
 **Criterio técnico aplicado:**
 - Evité over-engineering (ej: eliminar conflictos complejos)
-- Prioricé legibilidad sobre cleverness
-- Balanceé tiempo (6h) vs completitud
+- Prioricé legibilidad
+- Balance de tiempo en base a duracion del reto (6 horas)
 
 ## 📝 Notas Adicionales
 
