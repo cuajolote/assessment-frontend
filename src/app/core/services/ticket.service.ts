@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { Observable, of, delay, throwError } from 'rxjs';
 import { Ticket } from '../models/ticket.model';
 
 @Injectable({ providedIn: 'root' })
@@ -12,6 +12,11 @@ export class TicketService {
   }
 
   updateTicket(id: string, patch: Partial<Ticket>): Observable<Ticket> {
+    // When offline, simulate a network error so changes get queued
+    if (!navigator.onLine) {
+      return throwError(() => new Error('Network unavailable'));
+    }
+
     // Simulated backend response with a small delay
     const updated = { id, ...patch, updatedAt: new Date().toISOString() } as Ticket;
     return of(updated).pipe(delay(300 + Math.random() * 400));
