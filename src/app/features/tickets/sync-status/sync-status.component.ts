@@ -8,7 +8,6 @@ import { ConnectivityService } from '../../../core/services/connectivity.service
   standalone: true,
   imports: [CommonModule],
   templateUrl: './sync-status.component.html',
-  styleUrl: './sync-status.component.scss',
 })
 export class SyncStatusComponent {
   private readonly store = inject(TicketStoreService);
