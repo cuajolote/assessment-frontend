@@ -4,6 +4,14 @@
 
 ## 🚀 Quick Start
 
+
+Puedes ver la aplicacion por aqui sin necesidad de instalar nada:https:
+
+# Vercel deployed URL
+https://assessment-frontend-rust-six.vercel.app/
+
+O tambien instalar localmente:
+
 ```bash
 # Install dependencies
 npm install
@@ -14,7 +22,7 @@ npx ts-node scripts/generate-tickets.ts
 # Start development server
 npm start
 
-# Vercel deployed URL
+
 
 ```
 
