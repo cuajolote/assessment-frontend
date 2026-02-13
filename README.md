@@ -173,15 +173,15 @@ npm test
 ```
 
 **Coverage:**
-- `ticket-store.service.spec.ts` - Store y filtros
-- `ticket-validators.spec.ts` - Validaciones cross-field
-- `data-sanitizer.spec.ts` - Normalización de datos
-- `offline.service.spec.ts` - Básicos (IndexedDB requiere mock complejo)
+- `ticket-store.service.spec.ts` - Servicio de estado (BehaviorSubject patterns, filtros, selectors)
+- `ticket-validators.spec.ts` - Validaciones cross-field complejas
 
-**Tests omitidos intencionalmente:**
-- Snapshots sin valor semántico
-- Tests de componentes UI simples (badges, etc.)
-- Tests de IndexedDB (requieren `fake-indexeddb` - fuera de scope para 6h)
+**Criterio de testing:**
+Siguiendo las recomendaciones del assessment, incluí solo tests críticos:
+- ✅ Servicios/capa de estado
+- ✅ Validaciones complejas de formularios
+- ❌ Snapshots sin valor semántico
+- ❌ Tests triviales de componentes UI
 
 ## 🔄 Trade-offs y Decisiones
 
