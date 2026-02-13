@@ -5,7 +5,7 @@
 ## 🚀 Quick Start
 
 
-Puedes ver la aplicacion por aqui sin necesidad de instalar nada:https:
+Puedes ver la aplicacion por aqui sin necesidad de instalar nada:
 
 # Vercel deployed URL
 https://assessment-frontend-rust-six.vercel.app/
